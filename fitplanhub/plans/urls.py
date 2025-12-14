@@ -2,11 +2,14 @@ from django.urls import path
 from .views import (
     TrainerPlanView,
     TrainerPlanDetailView,
-    PublicPlanListView
+    PublicPlanListView,
+    PlanDetailView,
 )
 
 urlpatterns = [
     path('', PublicPlanListView.as_view()),
     path('trainer/', TrainerPlanView.as_view()),
     path('trainer/<int:plan_id>/', TrainerPlanDetailView.as_view()),
+    path('api/plans/<int:plan_id>/', PlanDetailView.as_view()),
+    
 ]

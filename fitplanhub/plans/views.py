@@ -7,6 +7,8 @@ from .models import FitnessPlan
 from .serializers import FitnessPlanSerializer
 from accounts.permissions import IsTrainer
 
+from subscriptions.utils import has_active_subscription
+
 class TrainerPlanView(APIView):
     permission_classes = [IsAuthenticated, IsTrainer]
 
@@ -62,5 +64,36 @@ class PublicPlanListView(APIView):
                 "price": plan.price,
                 "trainer": plan.trainer.name
             })
+
+        return Response(data)
+
+class PlanDetailView(APIView):
+    def get(self, request, plan_id):
+        try:
+            plan = FitnessPlan.objects.select_related('trainer').get(id=plan_id)
+        except FitnessPlan.DoesNotExist:
+            return Response({"detail": "Not found"}, status=404)
+
+        is_subscribed = False
+
+        if request.user.is_authenticated and request.user.role == 'user':
+            is_subscribed = has_active_subscription(request.user, plan)
+
+        if is_subscribed:
+            data = {
+                "id": plan.id,
+                "title": plan.title,
+                "description": plan.description,
+                "price": plan.price,
+                "duration_days": plan.duration_days,
+                "trainer": plan.trainer.name
+            }
+        else:
+            data = {
+                "id": plan.id,
+                "title": plan.title,
+                "price": plan.price,
+                "trainer": plan.trainer.name
+            }
 
         return Response(data)
