@@ -8,6 +8,10 @@ from .serializers import FitnessPlanSerializer
 from accounts.permissions import IsTrainer
 
 from subscriptions.utils import has_active_subscription
+from rest_framework.permissions import IsAuthenticated
+from follows.models import TrainerFollow
+from subscriptions.models import Subscription
+
 
 class TrainerPlanView(APIView):
     permission_classes = [IsAuthenticated, IsTrainer]
@@ -97,3 +101,42 @@ class PlanDetailView(APIView):
             }
 
         return Response(data)
+
+class UserFeedView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        if request.user.role != 'user':
+            return Response(
+                {"detail": "Feed is only available for users"},
+                status=403
+            )
+
+        followed_trainers = TrainerFollow.objects.filter(
+            user=request.user
+        ).values_list('trainer_id', flat=True)
+
+        plans = FitnessPlan.objects.select_related('trainer')\
+            .filter(trainer_id__in=followed_trainers)
+
+        subscribed_plan_ids = Subscription.objects.filter(
+            user=request.user,
+            is_active=True
+        ).values_list('plan_id', flat=True)
+
+        response_data = []
+
+        for plan in plans:
+            response_data.append({
+                "plan_id": plan.id,
+                "title": plan.title,
+                "price": plan.price,
+                "duration_days": plan.duration_days,
+                "trainer": {
+                    "id": plan.trainer.id,
+                    "name": plan.trainer.name
+                },
+                "is_purchased": plan.id in subscribed_plan_ids
+            })
+
+        return Response(response_data)

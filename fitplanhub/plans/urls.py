@@ -4,6 +4,7 @@ from .views import (
     TrainerPlanDetailView,
     PublicPlanListView,
     PlanDetailView,
+    UserFeedView,
 )
 
 urlpatterns = [
@@ -11,5 +12,6 @@ urlpatterns = [
     path('trainer/', TrainerPlanView.as_view()),
     path('trainer/<int:plan_id>/', TrainerPlanDetailView.as_view()),
     path('api/plans/<int:plan_id>/', PlanDetailView.as_view()),
-    
+    path('feed/', UserFeedView.as_view()),
+
 ]
